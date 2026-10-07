@@ -23,6 +23,8 @@ mcp/       optional MCP server — read-only stdio bridge exposing a user's work
 media/     exercise img/gif, gitignored, fetched at runtime by the `media` compose service.
 website/   static project site (plain HTML/CSS/JS), deployed separately.
 kubernetes/ example manifests (docs/SELF_HOSTING_KUBERNETES.md).
+cloudflare/ Cloudflare Workers deploy, with wrangler.jsonc at the root: api/server.js runs unmodified
+           in a Durable Object, node:fs aliased to fs-shim.js on its storage (docs/SELF_HOSTING_CLOUDFLARE.md).
 docs/      guides indexed in docs/README.md (FAQ, SELF_HOSTING*, MOBILE, AI_COACH, DATA_IMPORTS, API);
            docs/dev/ holds feature design notes (SET_TYPES: drop sets/rest-pause, LIST_VIEW, COMBINE_ROUTINES).
 ```

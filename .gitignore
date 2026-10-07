@@ -21,3 +21,6 @@ node_modules
 junit.xml
 coverage/
 frontend/bundle-size.json
+
+# Cloudflare Workers: wrangler's local state and build output
+.wrangler/

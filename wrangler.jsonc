@@ -1,0 +1,49 @@
+// openGym on Cloudflare Workers — app, API and data in one Worker. Deployed by Workers Builds on
+// every push (or `npx wrangler deploy` by hand). How it works and what differs from the Docker
+// stack: docs/SELF_HOSTING_CLOUDFLARE.md.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Must match the Worker's name in the Cloudflare dashboard when Workers Builds deploys it.
+  "name": "opengym",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Installs api/ and frontend/ dependencies and builds the frontend into frontend/dist.
+  "build": { "command": "node cloudflare/build.mjs" },
+
+  "assets": {
+    "directory": "./frontend/dist",
+    "binding": "ASSETS",
+    // /api never falls through to a file; index.html is served as-is (sw.js precaches it and
+    // refuses a redirect); paths that are not files are answered by the Worker (cloudflare/worker.js).
+    "run_worker_first": ["/api/*"],
+    "html_handling": "none",
+    "not_found_handling": "none"
+  },
+
+  // The API — api/server.js, run inside one SQLite-backed Durable Object that is also its disk.
+  "durable_objects": {
+    "bindings": [{ "name": "API", "class_name": "OpenGymApi" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["OpenGymApi"] }],
+
+  // The API reads node:fs and undici; in a Worker those are the object's storage and the
+  // platform's fetch (see the two files for why).
+  "alias": {
+    "node:fs": "./cloudflare/fs-shim.js",
+    "fs": "./cloudflare/fs-shim.js",
+    "undici": "./cloudflare/undici-shim.js"
+  },
+  // A bundled Worker has no import.meta.url, and the Coach's process adapters resolve paths
+  // against it when they load (they never run here: COACH_DISABLED=1).
+  "define": { "import.meta.url": "\"file:///bundle/cloudflare/worker.js\"" },
+
+  // Settings are the same variables as .env.example (RP_ID, ORIGIN, ADMIN_UIDS, INVITE_ONLY,
+  // ALLOW_GUEST, DEFAULT_LANG, SESSION_DAYS, AUDIT_*, VAPID_SUBJECT…). Left unset, ORIGIN and RP_ID
+  // come from the address the app is first opened at. Variables set in the dashboard are kept
+  // across deploys; to set them here instead, add a "vars" block and remove keep_vars.
+  "keep_vars": true,
+
+  "observability": { "enabled": true }
+}

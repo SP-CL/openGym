@@ -1,5 +1,13 @@
 {
+  "private": true,
+  "scripts": {
+    "build": "node cloudflare/build.mjs",
+    "deploy:cloudflare": "wrangler deploy",
+    "dev:cloudflare": "wrangler dev",
+    "test:cloudflare": "node --test cloudflare/test/*.test.js"
+  },
   "devDependencies": {
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "wrangler": "^4.148.0"
   }
 }

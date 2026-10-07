@@ -335,6 +335,7 @@ export function readSync(fd, buffer, offset = 0, length = buffer.byteLength - of
   const e = fdEntry(fd, 'read');
   const at = position == null ? e.pos : Number(position);
   const n = Math.max(0, Math.min(length, e.buf.length - at));
+  if (n === 0) return 0;
   e.buf.copy(Buffer.from(buffer.buffer, buffer.byteOffset, buffer.byteLength), offset, at, at + n);
   if (position == null) e.pos += n;
   return n;

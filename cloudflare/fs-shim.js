@@ -56,7 +56,9 @@ const parentOf = p => path.posix.dirname(p);
 const childPrefix = dir => (dir === '/' ? '/' : dir + '/');
 
 const fileMeta = p => store().get(F + p);
-const dirMeta = p => (p === '/' ? { mtimeMs: 0, mode: 0o40755 } : store().get(D + p));
+// / and /tmp always exist, as on any system (the Coach's admin test makes a temp dir in /tmp).
+const BUILTIN_DIRS = new Set(['/', '/tmp']);
+const dirMeta = p => (BUILTIN_DIRS.has(p) ? store().get(D + p) || { mtimeMs: 0, mode: 0o41777 } : store().get(D + p));
 
 function encodingOf(opts) {
   if (typeof opts === 'string') return opts;
@@ -198,7 +200,7 @@ export function renameSync(from, to) {
     return;
   }
   const d = dirMeta(from);
-  if (!d || from === '/') throw fsError('ENOENT', 'rename', from);
+  if (!d || BUILTIN_DIRS.has(from)) throw fsError('ENOENT', 'rename', from);
   if (fileMeta(to)) throw fsError('ENOTDIR', 'rename', from);
   if (dirMeta(to) && [...s.list({ prefix: F + childPrefix(to) })].length + [...s.list({ prefix: D + childPrefix(to) })].length) {
     throw fsError('ENOTEMPTY', 'rename', from);
@@ -272,7 +274,7 @@ export function rmSync(p, opts) {
   p = abs(p);
   const force = !!(opts && opts.force), recursive = !!(opts && opts.recursive);
   if (fileMeta(p)) return unlinkSync(p);
-  if (!dirMeta(p) || p === '/') {
+  if (!dirMeta(p) || BUILTIN_DIRS.has(p)) {
     if (force) return;
     throw fsError('ENOENT', 'rm', p);
   }

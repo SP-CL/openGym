@@ -4,7 +4,8 @@
     "build": "node cloudflare/build.mjs",
     "deploy:cloudflare": "wrangler deploy",
     "dev:cloudflare": "wrangler dev",
-    "test:cloudflare": "node --test cloudflare/test/*.test.js"
+    "test:cloudflare": "node --test cloudflare/test/*.test.js",
+    "test:cloudflare:smoke": "node cloudflare/build.mjs && node --test cloudflare/test/worker.smoke.mjs"
   },
   "devDependencies": {
     "js-yaml": "^4.1.0",

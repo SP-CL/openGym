@@ -1,0 +1,55 @@
+# The Cloudflare Workers build runs api/server.js unmodified inside a Durable Object
+# (docs/SELF_HOSTING_CLOUDFLARE.md), so a change to the API can break it without failing any of
+# the API's own tests: an import-time timer or random value, an fs call the shim lacks. This runs
+# the shim's unit tests and the Worker itself under wrangler dev with a software passkey.
+name: Cloudflare Workers
+
+on:
+  pull_request:
+    paths:
+      - 'api/**'
+      - 'cloudflare/**'
+      - 'frontend/package*.json'
+      - 'wrangler.jsonc'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/cloudflare.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'api/**'
+      - 'cloudflare/**'
+      - 'frontend/package*.json'
+      - 'wrangler.jsonc'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/cloudflare.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            api/package-lock.json
+            frontend/package-lock.json
+      - run: npm ci
+      - run: npm run test:cloudflare
+      # Bundles the Worker exactly as a deploy would, without uploading it.
+      - run: npx wrangler deploy --dry-run --outdir "$RUNNER_TEMP/worker"
+      - run: npm run test:cloudflare:smoke
